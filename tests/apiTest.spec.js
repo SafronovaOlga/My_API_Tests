@@ -1,42 +1,92 @@
-import {test, request, expect} from '@playwright/test'
-import * as data from '../testData/apiTestData/apiTestData.js';
+import {test, request, expect} from "@playwright/test";
+import * as testData from '../testData/apiTestData/apiTestData.js';
+import * as utils from '../utils/apiUtils/apiTestsUtils.js';
+import * as preconditions from '../utils/preconditions.js';
 
-const BASE_URL = 'http://localhost:5001/api';
+const BASE_URL= 'http://localhost:5000/api';
 
-// test (' GET /', async () =>  {
-//
-//     const apiRequest = await request.newContext();
-//
-//     const response = await apiRequest.get(`${BASE_URL}/`);
-//     // (BASE_URL + "/")
-    /*
-    APIResponse: 200 OK
-  X-Powered-By: Express
-  Content-Type: text/html; charset=utf-8
-  Content-Length: 23
-  ETag: W/"17-e7men0TKiMdRQRNwnNNj2O/Tllw"
-  Date: Sun, 22 Sep 2024 16:48:09 GMT
-  Connection: keep-alive
-  Keep-Alive: timeout=5
-     */
+let apiRequest;
 
-//     console.log((response));
-//     console.log(await response.text());
-//
-//    // await expect(actualResult).assertWord.(expectedResult);
-//     //await expect(response).toBe(BASE_URL);
-//     await expect(await response.text()).toEqual("Node Express API Server")
-// });
+test.beforeEach(async() => {
+    apiRequest = await request.newContext();
+})
 
-test('GET /users/empty DB message', async () =>  {
+test.afterEach(async() => {
+    await apiRequest.dispose();
+})
 
+test('GET /', async () => {
+    // content
+    // const apiRequest = await request.newContext();
+
+//request
+    const response = await apiRequest.get(`${BASE_URL}/`);
+    const statusCode = response.status();
+    const headersArray = response.headersArray();
+    const contentTypeHeader = headersArray.find(
+        (header) => header.name === 'Content-Type');
+    const contentTypeHeaderValue = contentTypeHeader.value;
+    const contentLengthHeaderValue = headersArray
+        .find((header) => header.name === 'Content-Length')
+        .value;
+    const responseText = await response.text();
+
+
+    console.log(response);
+    console.log('---------------------------------------------')
+    console.log(await response.text());
+    console.log(statusCode);
+    console.log(headersArray);
+    console.log(contentTypeHeader);
+    console.log(contentTypeHeaderValue);
+    console.log(contentLengthHeaderValue);
+
+    //Assert response
+
+    // await expect(actualResult).assertWord.(expected result)
+    await expect(statusCode).toBe(200);
+    await expect(response).toBeOK();
+    await expect(response.ok()).toBeTruthy();
+
+    await expect(responseText).toEqual("Node Express API Server App.");
+
+    await expect(contentTypeHeaderValue).toBe("text/html; charset=utf-8");
+    await expect(contentLengthHeaderValue).toEqual(responseText.length.toString());
+
+
+
+})
+
+// one more test GET with utils
+test('GET / with utils', async () => {
+
+//request
+    const response = await apiRequest.get(`${testData.BASE_URL}/`); // act
+
+    const statusCode = utils.getResponseStatus(response);
+
+    await expect(statusCode).toBe(testData.expectedStatusCodes._200);
+
+    const contentTypeHeaderValue = utils.getContentTypeHeaderValue(response);
+    const contentLengthHeaderValue = utils.getContentLengthHeaderValue(response);
+    const responseText = await utils.getResponseText(response);
+
+    await expect(responseText).toEqual(testData.expectedTexts.successfulGetApiHome);
+    await expect(contentTypeHeaderValue).toBe(testData.expectedHeaders.contentTypeValue.textHtml);
+    await expect(contentLengthHeaderValue).toEqual(testData.expectedHeaders.contentLengthValue.successfulGetApiHome);
+})
+
+
+test('GET /users/ empty DB message', async () => {
     const expectedResponseText = "There are no users.";
     const expectedContentTypeValue = "text/html; charset=utf-8";
     const expectedContentLength = expectedResponseText.length.toString();
 
-    const apiRequest = await request.newContext();
+    // const apiRequest = await request.newContext();
+
+    // precondition
     await expect(
-        await  apiRequest.delete(`${BASE_URL}/users/`)
+        await apiRequest.delete(`${BASE_URL}/users/`)
     ).toBeOK();
 
     const response = await apiRequest.get(`${BASE_URL}/users/`);
@@ -46,79 +96,68 @@ test('GET /users/empty DB message', async () =>  {
     await expect(response).toBeOK();
     await expect(statusCode).toBe(200);
 
-    // header
+    //headers
     const contentTypeHeaderValue = response
         .headersArray()
-        .find((header)=>
-            header.name === 'Content-Type')
+        .find((header) => header.name === 'Content-Type')
         .value;
-
     const contentLengthHeaderValue = response
         .headersArray()
-        .find((header) => header
-            .name === 'Content-Length')
+        .find((header) => header.name === 'Content-Length')
         .value;
-
     const responseText = await response.text();
 
     await expect(contentTypeHeaderValue).toBe(expectedContentTypeValue);
     await expect(contentLengthHeaderValue).toBe(expectedContentLength);
     await expect(responseText).toBe(expectedResponseText);
 
-    await apiRequest.dispose();  // closed clean
+})
 
-    });
+//AAA Pattern test
+// one more test GET with utils
+test('GET /users/ empty DB message with utils', async () => {
+
+    // precondition
+    await preconditions.setPrecondition_DeleteUsers(apiRequest);
+
+    const response = await apiRequest.get(`${testData.USERS_ENDPOINT}/`);
+
+    const statusCode = utils.getResponseStatus(response);
+
+    await expect(statusCode).toBe(testData.expectedStatusCodes._200);
+
+    //headers
+    const contentTypeHeaderValue = utils.getContentTypeHeaderValue(response);
+    const contentLengthHeaderValue = utils.getContentLengthHeaderValue(response);
+    const responseText = await utils.getResponseText(response);
+
+    await expect(contentTypeHeaderValue).toBe(testData.expectedHeaders.contentTypeValue.textHtml);
+    await expect(contentLengthHeaderValue).toBe(testData.expectedHeaders.contentLengthValue.successfulGetApiUsersHomeEmptyDb);
+    await expect(responseText).toBe(testData.expectedTexts.successfulGetUsersHomeEmptyDb);
+
+})
 
 
-test('GET /users/ response data', async() => {
+test ('GET /users/ response testData', async () => {
 
-    const expectedContentTypeHeaderValue = "application/json; charset=utf-8";
-    const expectedResponseStatusCode = 200;
-    const expectedIdLength = 36;
+    // precondition
+    await preconditions.setPrecondition_DeleteUsers_CreateUser(apiRequest);
 
-    const userData = {
-        "firstName": "John",
-        "lastName": "Doe",
-        "age": 35
-    }
-
-    const apiRequest = await request.newContext();
-
-    //precondition  `${data.USERS_ENDPOINT}/`
-    await expect(
-        await  apiRequest.delete(`${data.USERS_ENDPOINT}/`)
-    ).toBeOK();
-
-    await expect(
-        await apiRequest.post(
-            `${data.USERS_ENDPOINT}/`, {
-                data: userData,
-            })
-    ).toBeOK();
-
-    const response = await apiRequest.get(`${data.USERS_ENDPOINT}/`);
-
+    const response = await apiRequest.get(`${testData.USERS_ENDPOINT}/`);
     const statusCode = response.status();
 
-    await expect(response).toBeOK();
-    await expect(statusCode).toBe(expectedResponseStatusCode);
+    await expect(statusCode).toBe(testData.expectedStatusCodes._200);
 
-    const contentTypeHeaderValue =
-        response
-            .headersArray()
-            .find((header) => header.name === 'Content-Type')
-            .value;
+    const contentTypeHeaderValue = utils.getContentTypeHeaderValue(response);
+    const responseBody = await utils.getResponseBody(response);
+    const isArray = await Array.isArray(responseBody);
 
-    const responseBody = await response.json();
-    console.info(responseBody);
-
-    await expect(contentTypeHeaderValue).toBe(expectedContentTypeHeaderValue);
-    await expect(Array.isArray(responseBody)).toBeTruthy();
-    await expect(responseBody).toHaveLength(1);
-    await expect(responseBody[0].firstName).toBe(userData.firstName);
-    await expect(responseBody[0].lastName).toBe(userData.lastName);
-    await expect(responseBody[0].age).toBe(userData.age);
-    await expect(responseBody[0].id.length).toBe(expectedIdLength);
-
-    await apiRequest.dispose();
+    await expect(contentTypeHeaderValue).toBe(testData.expectedHeaders.contentTypeValue.applicationJson);
+    await expect(isArray).toBeTruthy();
+    await expect(isArray).toBe(true);
+    await expect(responseBody).toHaveLength(testData.expectedResponseObjectsCount._1);
+    await expect(responseBody[0].firstName).toBe(testData.user.firstName);
+    await expect(responseBody[0].lastName).toBe(testData.user.lastName);
+    await expect(responseBody[0].age).toBe(testData.user.age);
+    await expect(responseBody[0].id.length).toBe(testData.expected.idLength);
 })
