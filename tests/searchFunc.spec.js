@@ -29,9 +29,9 @@ Expected result:
     {tcName: data._5.tcName, searchCriteria: data._5.searchCriteria, expectedCount: data._5.expectedCount, expectedUsers: data._5.expectedUsers},
     {tcName: data._6.tcName, searchCriteria: data._6.searchCriteria, expectedCount: data._6.expectedCount, expectedUsers: data._6.expectedUsers},
 ].forEach(({ tcName, searchCriteria, expectedCount,  expectedUsers }) => {
-    console.log("!!!!!", tcName);
     test.describe('Search User Functionality', async() => {
         let apiRequest;
+        const usersDB = [users.user1, users.user2, users.user3, users.user4];
 
         test.beforeEach('Delete DB, Land on Home page, Create DB via UI', async ({ page }) => {
             //1. DB is empty via api request
@@ -42,16 +42,74 @@ Expected result:
             await page.goto(HOME_PAGE_URL);
 
             //3. Create UsersDB contains 4 users
+            const firstNameField = await page.getByPlaceholder("Enter first name...");
+            const lastNameField = await page.getByPlaceholder("Enter last name...");
+            const ageField = await page.getByPlaceholder("Enter age...");
+            const addButton = await page.getByRole('button', {name: "Add"});
 
+            for(const user of usersDB) {
+                await firstNameField.fill(user.firstName);
+                await lastNameField.fill(user.lastName);
+                await ageField.fill(user.age);
+                await addButton.click();
+                user.id = await page.locator('tbody>tr>td').last().innerText()
+            }
+
+
+            console.log(usersDB);
         })
 
-        test(`TC-SearchFun-1: ${tcName}`, async({ page }) => {
-            console.log("Test");
+            test(`TC-SearchFun-1: ${tcName}`, async ({page}) => {
+                console.log("Test");
 
-        })
+                //ДЗ Написать тест
+                // const searchTab = await page.getByRole('link', { name: 'Search'});
+                //
+                //
+                // await searchTab.click();
+                //
+                //
+                // let tableRows = await page.locator('tbody>tr');
+                //
+                //
+                // await expect(tableRows).toHaveCount(usersDB.length);
+                //
+                //
+                // const userIdField = await page.getByPlaceholder('Enter user ID...');
+                // const firstNameField = await page.getByPlaceholder('Enter first name...');
+                // const lastNameField = await page.getByPlaceholder('Enter last name...');
+                // const ageField = await page.getByPlaceholder('Enter age...');
+                // const searchButton = await page.getByRole('button', {name: 'Search'});
+                // await userIdField.fill(searchCriteria[0]);
+                // await firstNameField.fill(searchCriteria[1]);
+                // await lastNameField.fill(searchCriteria[2]);
+                // await ageField.fill(searchCriteria[3]);
+                // await searchButton.click();
+                // const foundUsers = [];
+                // tableRows = await page.locator('tbody tr');
+                // const usersList = await tableRows.allInnerTexts();
+                // console.log(usersList);
+                // for(let userInfo of usersList) {
+                // userInfo = userInfo.split('\t');
+                // console.log(userInfo)
+                // userInfo = userInfo.slice(1);
+                // console.log(userInfo)
+                // const user = {};
+                // user.firstName = userInfo[0];
+                // user.lastName = userInfo[1];
+                // user.age = userInfo[2];
+                // user.id = userInfo[3];
+                // foundUsers.push(user);
+                //  }
+                // console.log(foundUsers)
+                // await expect(tableRows.count()).not.toBe(usersDB.length);
+                // await expect(tableRows).toHaveCount(expectedResultCount);
+                // await expect(foundUsers.length).toBe(expectedResultCount);
+                // await expect(foundUsers).toStrictEqual(expectedUsers);
+        });
 
-        test.afterEach('Close API request context', async() => {
-            await apiRequest.dispose();
-        })
+            test.afterEach('Close API request context', async() => {
+                await apiRequest.dispose();
+            })
     })
 })
