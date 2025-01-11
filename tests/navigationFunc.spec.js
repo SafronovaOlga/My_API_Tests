@@ -83,4 +83,21 @@ const HOME_PAGE_URL = 'http://localhost:5076/';
         // 3. Verify the same tab remains active after the refresh.
         // - Expected Result: The active tab before the refresh should remain active afterward.
     })
+
+    test(`TC-NavTabFun-3: Verify ${tabName} Persistence on Page Refresh.`, async({ page }) => {
+
+        const tab = await page.getByRole('link', { name: `${tabName}`, exact:  true });
+
+        await tab.click();
+
+        const activeTabClassNameBeforeReload = await page.getByRole('link', {name: `${tabName}`}).getAttribute('class');
+
+        await expect(activeTabClassNameBeforeReload).toStrictEqual('nav-link active');
+
+        await page.reload();
+
+        const activeTabClassNameAfterReload = await page.getByRole('link', {name: `${tabName}`}).getAttribute('class');
+
+        await expect(activeTabClassNameAfterReload).toStrictEqual('nav-link active');
+    })
 })
