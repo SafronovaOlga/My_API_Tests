@@ -66,5 +66,7 @@ test.describe('Icons created when user created.', async() => {
 
     })
 
-
+    test.afterEach('Dispose request', async({ page }) => {
+        await apiRequest.dispose();
+    })
 })
